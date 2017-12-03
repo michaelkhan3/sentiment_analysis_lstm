@@ -1,0 +1,2 @@
+# Ignore word2vec files which are too large for git
+glove_word2Vec/
