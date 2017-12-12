@@ -24,21 +24,21 @@ wordsVector = words.as_matrix().astype(np.float32)
 wordsList = words.index.tolist()
 
 
-# In[5]:
+# In[4]:
 
 
 print(wordsVector.shape)
 print(len(wordsList))
 
 
-# In[8]:
+# In[5]:
 
 
 baseballIndex = wordsList.index('baseball')
 wordsVector[baseballIndex]
 
 
-# In[9]:
+# In[6]:
 
 
 import tensorflow as tf
@@ -63,7 +63,13 @@ print(firstSentence)
 # 
 #  Creating a utility function to convert sentences into an numpy array of words.
 
-# In[10]:
+# In[7]:
+
+
+maxSeqLength = 250
+
+
+# In[8]:
 
 
 def convert_sentence(sentence):
@@ -94,7 +100,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[11]:
+# In[9]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -104,7 +110,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[12]:
+# In[10]:
 
 
 with tf.Session() as sess:
@@ -116,19 +122,19 @@ with tf.Session() as sess:
 # Now we will load the movie review data. 
 # The data comes from https://www.kaggle.com/c/word2vec-nlp-tutorial/data
 
-# In[13]:
+# In[11]:
 
 
 train_reviews = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
 
 
-# In[14]:
+# In[12]:
 
 
 train_reviews.head()
 
 
-# In[15]:
+# In[13]:
 
 
 train_reviews.shape
@@ -138,7 +144,7 @@ train_reviews.shape
 # 
 # Exploring the number of words in each review 
 
-# In[16]:
+# In[14]:
 
 
 def sentence_len(sentence):
@@ -147,19 +153,19 @@ def sentence_len(sentence):
     return len(sentence)
 
 
-# In[17]:
+# In[15]:
 
 
 num_words = train_reviews.apply(lambda row: sentence_len(row['review']), axis=1)
 
 
-# In[18]:
+# In[16]:
 
 
 num_words.describe()
 
 
-# In[19]:
+# In[17]:
 
 
 import matplotlib.pyplot as plt
@@ -187,7 +193,7 @@ plt.show()
 
 # First, try this with a subset of the training data. Maybe the first 500 rows.
 
-# In[20]:
+# In[18]:
 
 
 # subset_reviews = train_reviews.iloc[0:500]
@@ -195,20 +201,20 @@ plt.show()
 
 # Using apply wasn't working correctly so I decided to use a list comprehension
 
-# In[27]:
+# In[19]:
 
 
 # subset_reviews_ids = [convert_sentence(row[3]) for row in subset_reviews.itertuples()]
 
 
-# In[28]:
+# In[20]:
 
 
 # subset_reviews_ids = pd.DataFrame(subset_reviews_ids)
 # subset_reviews_ids.shape
 
 
-# In[29]:
+# In[21]:
 
 
 # subset_reviews_ids.head(2)
@@ -218,47 +224,49 @@ plt.show()
 # 
 # This takes a **LONG** time to run therefore, I have saved the output file as a csv which can loaded to skip this step.
 
-# In[30]:
+# In[22]:
 
 
 # train_reviews_ids = [convert_sentence(row[3]) for row in train_reviews.itertuples()]
 
 
-# In[31]:
+# In[23]:
 
 
 # train_reviews_ids_df = pd.DataFrame(train_reviews_ids)
 
 
-# In[32]:
+# In[24]:
 
 
 # train_reviews_ids_df.shape
 
 
-# In[33]:
+# In[25]:
 
 
 # train_reviews_ids_df.head()
 
 
-# In[34]:
+# In[26]:
 
 
-# train_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv")
+# train_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv", index=False)
 
 
-# In[20]:
+# #### TODO: remove drop once new version of csv is created
+
+# In[27]:
 
 
-train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv")
+train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv").drop(['Unnamed: 0'],axis=1)
 
 
 # ## RNN Model
 
 # Setting hyper parameters
 
-# In[21]:
+# In[28]:
 
 
 batch_size = 24
@@ -267,7 +275,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[22]:
+# In[29]:
 
 
 import tensorflow as tf
@@ -277,7 +285,7 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[24]:
+# In[30]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
@@ -285,7 +293,7 @@ data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[25]:
+# In[31]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -293,7 +301,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[26]:
+# In[32]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -303,21 +311,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[27]:
+# In[33]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[28]:
+# In[34]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[29]:
+# In[35]:
 
 
 import datetime
@@ -327,6 +335,109 @@ tf.summary.scalar('Accuracy', accuracy)
 merged = tf.summary.merge_all()
 logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
 writer = tf.summary.FileWriter(logdir, sess.graph)
+
+
+# ## Train Network
+# 
+# 
+
+# #### Testing for functions  -  Delete later
+
+# In[36]:
+
+
+# train_reviews.head()
+train_reviews.iloc[1, 1]
+
+
+# In[37]:
+
+
+train_reviews_ids_df.head()
+
+
+# In[38]:
+
+
+(train_reviews_ids_df.shape[0]-1)
+
+
+# In[39]:
+
+
+from random import randint
+
+test = randint(1, train_reviews_ids_df.shape[0]-1)
+ans = train_reviews_ids_df[test-1:test].as_matrix()
+
+print(ans)
+print(type(ans))
+
+
+# In[42]:
+
+
+a, b = getTrainBatch()
+
+print(a[0])
+print(b[0])
+
+
+# #### Testing for functions  -  Delete later ABOVE
+
+# In[41]:
+
+
+from random import randint
+
+# Helper functions to provide data for batch
+def getTrainBatch():
+    labels = []
+    arr = np.zeros([batch_size, maxSeqLength])
+    
+    for i in range(batch_size):
+        num = randint(1, train_reviews_ids_df.shape[0]-1)
+        arr[i] = train_reviews_ids_df[test-1:test].as_matrix()
+        labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
+    
+    return arr, labels
+
+def getTestBatch():
+    labels = []
+    arr = np.zeros([batch_size, maxSeqLength])
+    
+    for i in range(batch_size):
+        num = randint(1, train_reviews_ids_df.shape[0]-1)
+        arr[i] = train_reviews_ids_df[test-1:test].as_matrix()
+        labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
+    print("TEST DATA HAS NOT BEEN LOADED YET")
+    # TODO: Load test data and do same prep as training data
+    return None, None
+
+
+# In[43]:
+
+
+sess = tf.InteractiveSession()
+saver = tf.train.Saver()
+sess.run(tf.global_variables_initializer())
+
+for i in range(itterations):
+    # Get next batch of reviews
+    nextBatch, nextBatchLabels = getTrainBatch()
+    sess.run(optimizer, {input_data: nextBatch, labels: nextBatchLabels})
+    
+    #Write summary to Tensorboard
+    if (i % 50 == 0):
+        summary = sess.run(merged, {input_data: nextBatch, labels: nextBatchLabels})
+        writer.add_summary(summary, i)
+        
+    #Save the network every 10,000 training iterations
+    if(i % 10000 == 0 and i != 0):
+        save_path = saver.save(sess, "models/pretrained_lstm.ckpt", global_step = 1)
+        print("saved to %s" % save_path)
+
+writer.close()
 
 
 # In[ ]:
