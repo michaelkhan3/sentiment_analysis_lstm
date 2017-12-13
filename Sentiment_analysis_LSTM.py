@@ -66,12 +66,6 @@ print(firstSentence)
 # In[7]:
 
 
-maxSeqLength = 250
-
-
-# In[8]:
-
-
 def convert_sentence(sentence):
     # Got from analysis below.
     maxSeqLength = 250
@@ -100,7 +94,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[9]:
+# In[8]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -110,7 +104,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[10]:
+# In[9]:
 
 
 with tf.Session() as sess:
@@ -122,10 +116,23 @@ with tf.Session() as sess:
 # Now we will load the movie review data. 
 # The data comes from https://www.kaggle.com/c/word2vec-nlp-tutorial/data
 
+# In[10]:
+
+
+data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
+
+
+# Split training and testing datasets
+# 
+# 
+# Set seed to make sure the split is always the same
+
 # In[11]:
 
 
-train_reviews = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
+from sklearn.model_selection import train_test_split
+
+train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
 # In[12]:
@@ -140,32 +147,44 @@ train_reviews.head()
 train_reviews.shape
 
 
-# ## Exploratory analysis
-# 
-# Exploring the number of words in each review 
-
 # In[14]:
 
 
-def sentence_len(sentence):
-    sentence = sentence.translate(string.punctuation)
-    sentence = sentence.split(" ")
-    return len(sentence)
+test_reviews.head()
 
 
 # In[15]:
 
 
+test_reviews.shape
+
+
+# ## Exploratory analysis
+# 
+# Exploring the number of words in each review 
+
+# In[18]:
+
+
+def review_len(review):
+    review = review.translate(string.punctuation)
+    review = review.split(" ")
+    return len(review)
+
+
+# In[19]:
+
+
 num_words = train_reviews.apply(lambda row: sentence_len(row['review']), axis=1)
 
 
-# In[16]:
+# In[20]:
 
 
 num_words.describe()
 
 
-# In[17]:
+# In[21]:
 
 
 import matplotlib.pyplot as plt
@@ -176,6 +195,12 @@ plt.xlabel("Sentence Length")
 plt.ylabel("Frequency")
 plt.axis([0, 1200, 0, 8000])
 plt.show()
+
+
+# In[22]:
+
+
+maxSeqLength = 250
 
 
 # ## Converting words to word vecs
@@ -193,7 +218,7 @@ plt.show()
 
 # First, try this with a subset of the training data. Maybe the first 500 rows.
 
-# In[18]:
+# In[23]:
 
 
 # subset_reviews = train_reviews.iloc[0:500]
@@ -201,20 +226,20 @@ plt.show()
 
 # Using apply wasn't working correctly so I decided to use a list comprehension
 
-# In[19]:
+# In[24]:
 
 
 # subset_reviews_ids = [convert_sentence(row[3]) for row in subset_reviews.itertuples()]
 
 
-# In[20]:
+# In[25]:
 
 
 # subset_reviews_ids = pd.DataFrame(subset_reviews_ids)
 # subset_reviews_ids.shape
 
 
-# In[21]:
+# In[26]:
 
 
 # subset_reviews_ids.head(2)
@@ -222,51 +247,71 @@ plt.show()
 
 # Now apply it to whole dataset. 
 # 
-# This takes a **LONG** time to run therefore, I have saved the output file as a csv which can loaded to skip this step.
+# This takes a **LONG** time to run therefore, I have saved the output files as a csvs which can be loaded to avoid this step.
 
-# In[22]:
+# #### Converting training data
+
+# In[27]:
 
 
 # train_reviews_ids = [convert_sentence(row[3]) for row in train_reviews.itertuples()]
-
-
-# In[23]:
-
-
 # train_reviews_ids_df = pd.DataFrame(train_reviews_ids)
+# train_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv", index=False)
 
 
-# In[24]:
+# #### Converting testing data
+
+# In[28]:
+
+
+# test_reviews_ids = [convert_sentence(row[3]) for row in test_reviews.itertuples()]
+# test_reviews_ids_df = pd.DataFrame(test_reviews_ids)
+# test_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv", index=False)
+
+
+# In[33]:
 
 
 # train_reviews_ids_df.shape
 
 
-# In[25]:
+# In[34]:
 
 
 # train_reviews_ids_df.head()
 
 
-# In[26]:
+# In[35]:
 
 
-# train_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv", index=False)
+# test_reviews_ids_df.shape
+
+
+# In[36]:
+
+
+# test_reviews_ids_df.head()
 
 
 # #### TODO: remove drop once new version of csv is created
 
-# In[27]:
+# In[38]:
 
 
-train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/ids_matrix.csv").drop(['Unnamed: 0'],axis=1)
+train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
+
+
+# In[39]:
+
+
+test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
 
 
 # ## RNN Model
 
 # Setting hyper parameters
 
-# In[28]:
+# In[ ]:
 
 
 batch_size = 24
@@ -275,7 +320,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[29]:
+# In[ ]:
 
 
 import tensorflow as tf
@@ -285,7 +330,7 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[30]:
+# In[ ]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
@@ -293,7 +338,7 @@ data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[31]:
+# In[ ]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -301,7 +346,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[32]:
+# In[ ]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -311,21 +356,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[33]:
+# In[ ]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[34]:
+# In[ ]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[35]:
+# In[ ]:
 
 
 import datetime
@@ -343,26 +388,26 @@ writer = tf.summary.FileWriter(logdir, sess.graph)
 
 # #### Testing for functions  -  Delete later
 
-# In[36]:
+# In[ ]:
 
 
 # train_reviews.head()
 train_reviews.iloc[1, 1]
 
 
-# In[37]:
+# In[ ]:
 
 
 train_reviews_ids_df.head()
 
 
-# In[38]:
+# In[ ]:
 
 
 (train_reviews_ids_df.shape[0]-1)
 
 
-# In[39]:
+# In[ ]:
 
 
 from random import randint
@@ -374,7 +419,7 @@ print(ans)
 print(type(ans))
 
 
-# In[42]:
+# In[ ]:
 
 
 a, b = getTrainBatch()
@@ -385,7 +430,7 @@ print(b[0])
 
 # #### Testing for functions  -  Delete later ABOVE
 
-# In[41]:
+# In[40]:
 
 
 from random import randint
@@ -397,7 +442,7 @@ def getTrainBatch():
     
     for i in range(batch_size):
         num = randint(1, train_reviews_ids_df.shape[0]-1)
-        arr[i] = train_reviews_ids_df[test-1:test].as_matrix()
+        arr[i] = train_reviews_ids_df[num-1:num].as_matrix()
         labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
     
     return arr, labels
@@ -407,15 +452,15 @@ def getTestBatch():
     arr = np.zeros([batch_size, maxSeqLength])
     
     for i in range(batch_size):
-        num = randint(1, train_reviews_ids_df.shape[0]-1)
-        arr[i] = train_reviews_ids_df[test-1:test].as_matrix()
+        num = randint(1, test_reviews_ids_df.shape[0]-1)
+        arr[i] = test_reviews_ids_df[num-1:num].as_matrix()
         labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
     print("TEST DATA HAS NOT BEEN LOADED YET")
     # TODO: Load test data and do same prep as training data
     return None, None
 
 
-# In[43]:
+# In[ ]:
 
 
 sess = tf.InteractiveSession()
