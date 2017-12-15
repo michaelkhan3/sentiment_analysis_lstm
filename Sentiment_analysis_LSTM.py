@@ -163,7 +163,7 @@ test_reviews.shape
 # 
 # Exploring the number of words in each review 
 
-# In[18]:
+# In[16]:
 
 
 def review_len(review):
@@ -172,19 +172,19 @@ def review_len(review):
     return len(review)
 
 
-# In[19]:
-
-
-num_words = train_reviews.apply(lambda row: sentence_len(row['review']), axis=1)
-
-
 # In[20]:
+
+
+num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
+
+
+# In[21]:
 
 
 num_words.describe()
 
 
-# In[21]:
+# In[22]:
 
 
 import matplotlib.pyplot as plt
@@ -197,7 +197,7 @@ plt.axis([0, 1200, 0, 8000])
 plt.show()
 
 
-# In[22]:
+# In[23]:
 
 
 maxSeqLength = 250
@@ -218,7 +218,7 @@ maxSeqLength = 250
 
 # First, try this with a subset of the training data. Maybe the first 500 rows.
 
-# In[23]:
+# In[24]:
 
 
 # subset_reviews = train_reviews.iloc[0:500]
@@ -226,20 +226,20 @@ maxSeqLength = 250
 
 # Using apply wasn't working correctly so I decided to use a list comprehension
 
-# In[24]:
+# In[25]:
 
 
 # subset_reviews_ids = [convert_sentence(row[3]) for row in subset_reviews.itertuples()]
 
 
-# In[25]:
+# In[26]:
 
 
 # subset_reviews_ids = pd.DataFrame(subset_reviews_ids)
 # subset_reviews_ids.shape
 
 
-# In[26]:
+# In[27]:
 
 
 # subset_reviews_ids.head(2)
@@ -251,7 +251,7 @@ maxSeqLength = 250
 
 # #### Converting training data
 
-# In[27]:
+# In[28]:
 
 
 # train_reviews_ids = [convert_sentence(row[3]) for row in train_reviews.itertuples()]
@@ -261,7 +261,7 @@ maxSeqLength = 250
 
 # #### Converting testing data
 
-# In[28]:
+# In[29]:
 
 
 # test_reviews_ids = [convert_sentence(row[3]) for row in test_reviews.itertuples()]
@@ -269,25 +269,25 @@ maxSeqLength = 250
 # test_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv", index=False)
 
 
-# In[33]:
+# In[30]:
 
 
 # train_reviews_ids_df.shape
 
 
-# In[34]:
+# In[31]:
 
 
 # train_reviews_ids_df.head()
 
 
-# In[35]:
+# In[32]:
 
 
 # test_reviews_ids_df.shape
 
 
-# In[36]:
+# In[33]:
 
 
 # test_reviews_ids_df.head()
@@ -295,13 +295,13 @@ maxSeqLength = 250
 
 # #### TODO: remove drop once new version of csv is created
 
-# In[38]:
+# In[34]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
 
 
-# In[39]:
+# In[35]:
 
 
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
@@ -311,7 +311,7 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # Setting hyper parameters
 
-# In[ ]:
+# In[36]:
 
 
 batch_size = 24
@@ -320,7 +320,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[ ]:
+# In[37]:
 
 
 import tensorflow as tf
@@ -330,7 +330,7 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[ ]:
+# In[38]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
@@ -338,7 +338,7 @@ data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[ ]:
+# In[39]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -346,7 +346,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[ ]:
+# In[40]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -356,21 +356,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[ ]:
+# In[41]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[ ]:
+# In[42]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[ ]:
+# In[43]:
 
 
 import datetime
@@ -388,26 +388,26 @@ writer = tf.summary.FileWriter(logdir, sess.graph)
 
 # #### Testing for functions  -  Delete later
 
-# In[ ]:
+# In[44]:
 
 
 # train_reviews.head()
 train_reviews.iloc[1, 1]
 
 
-# In[ ]:
+# In[45]:
 
 
 train_reviews_ids_df.head()
 
 
-# In[ ]:
+# In[46]:
 
 
 (train_reviews_ids_df.shape[0]-1)
 
 
-# In[ ]:
+# In[47]:
 
 
 from random import randint
@@ -419,7 +419,7 @@ print(ans)
 print(type(ans))
 
 
-# In[ ]:
+# In[50]:
 
 
 a, b = getTrainBatch()
@@ -430,7 +430,7 @@ print(b[0])
 
 # #### Testing for functions  -  Delete later ABOVE
 
-# In[40]:
+# In[49]:
 
 
 from random import randint
@@ -455,9 +455,7 @@ def getTestBatch():
         num = randint(1, test_reviews_ids_df.shape[0]-1)
         arr[i] = test_reviews_ids_df[num-1:num].as_matrix()
         labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
-    print("TEST DATA HAS NOT BEEN LOADED YET")
-    # TODO: Load test data and do same prep as training data
-    return None, None
+    return arr, labels
 
 
 # In[ ]:
@@ -483,6 +481,12 @@ for i in range(itterations):
         print("saved to %s" % save_path)
 
 writer.close()
+
+
+# In[ ]:
+
+
+print("Test")
 
 
 # In[ ]:
