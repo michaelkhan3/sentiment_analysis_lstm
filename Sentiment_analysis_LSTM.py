@@ -24,21 +24,21 @@ wordsVector = words.as_matrix().astype(np.float32)
 wordsList = words.index.tolist()
 
 
-# In[4]:
+# In[5]:
 
 
 print(wordsVector.shape)
 print(len(wordsList))
 
 
-# In[5]:
+# In[6]:
 
 
 baseballIndex = wordsList.index('baseball')
 wordsVector[baseballIndex]
 
 
-# In[6]:
+# In[7]:
 
 
 import tensorflow as tf
@@ -61,9 +61,9 @@ print(firstSentence)
 
 # ### Converting sentences
 # 
-#  Creating a utility function to convert sentences into an numpy array of words.
+#  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[7]:
+# In[8]:
 
 
 def convert_sentence(sentence):
@@ -116,7 +116,7 @@ with tf.Session() as sess:
 # Now we will load the movie review data. 
 # The data comes from https://www.kaggle.com/c/word2vec-nlp-tutorial/data
 
-# In[10]:
+# In[28]:
 
 
 data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
@@ -127,7 +127,7 @@ data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv
 # 
 # Set seed to make sure the split is always the same
 
-# In[11]:
+# In[29]:
 
 
 from sklearn.model_selection import train_test_split
@@ -135,7 +135,7 @@ from sklearn.model_selection import train_test_split
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
-# In[12]:
+# In[30]:
 
 
 train_reviews.head()
@@ -295,7 +295,7 @@ maxSeqLength = 250
 
 # #### TODO: remove drop once new version of csv is created
 
-# In[34]:
+# In[26]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
@@ -311,7 +311,7 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # Setting hyper parameters
 
-# In[36]:
+# In[19]:
 
 
 batch_size = 24
@@ -320,7 +320,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[37]:
+# In[20]:
 
 
 import tensorflow as tf
@@ -330,15 +330,14 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[38]:
+# In[21]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
-
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[39]:
+# In[22]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -346,7 +345,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[40]:
+# In[23]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -356,7 +355,7 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[41]:
+# In[24]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
@@ -430,7 +429,7 @@ print(b[0])
 
 # #### Testing for functions  -  Delete later ABOVE
 
-# In[49]:
+# In[11]:
 
 
 from random import randint
