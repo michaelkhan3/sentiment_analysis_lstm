@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 import pandas as pd
@@ -12,7 +12,7 @@ import re
 import tensorflow as tf
 
 
-# In[4]:
+# In[2]:
 
 
 wordsVector = np.load('glove_word2Vec/wordVectors.npy')
@@ -20,7 +20,7 @@ wordsList = np.load('glove_word2Vec/wordsList.npy').tolist()
 wordsList = [word.decode('UTF-8') for word in wordsList]
 
 
-# In[5]:
+# In[3]:
 
 
 print(wordsVector.shape)
@@ -32,7 +32,7 @@ print(len(wordsList))
 # Now we will load the movie review data. 
 # The data comes from https://www.kaggle.com/c/word2vec-nlp-tutorial/data
 
-# In[6]:
+# In[4]:
 
 
 data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
@@ -43,7 +43,7 @@ data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv
 # 
 # Set seed to make sure the split is always the same
 
-# In[7]:
+# In[5]:
 
 
 from sklearn.model_selection import train_test_split
@@ -51,25 +51,25 @@ from sklearn.model_selection import train_test_split
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
-# In[8]:
+# In[6]:
 
 
 train_reviews.head()
 
 
-# In[9]:
+# In[7]:
 
 
 train_reviews.shape
 
 
-# In[10]:
+# In[8]:
 
 
 test_reviews.head()
 
 
-# In[11]:
+# In[9]:
 
 
 test_reviews.shape
@@ -79,7 +79,7 @@ test_reviews.shape
 # 
 # Exploring the number of words in each review 
 
-# In[12]:
+# In[10]:
 
 
 def review_len(review):
@@ -88,19 +88,19 @@ def review_len(review):
     return len(review)
 
 
-# In[13]:
+# In[11]:
 
 
 num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
 
 
-# In[14]:
+# In[12]:
 
 
 num_words.describe()
 
 
-# In[15]:
+# In[13]:
 
 
 import matplotlib.pyplot as plt
@@ -113,7 +113,7 @@ plt.axis([0, 1200, 0, 8000])
 plt.show()
 
 
-# In[16]:
+# In[14]:
 
 
 maxSeqLength = 250
@@ -124,7 +124,7 @@ numDimensions = 300
 # 
 #  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[17]:
+# In[15]:
 
 
 def convert_sentence(sentence):
@@ -154,7 +154,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[18]:
+# In[16]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -164,7 +164,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[19]:
+# In[17]:
 
 
 with tf.Session() as sess:
@@ -186,7 +186,7 @@ with tf.Session() as sess:
 
 # First, try this with a subset of the training data. Maybe the first 500 rows.
 
-# In[20]:
+# In[ ]:
 
 
 # subset_reviews = train_reviews.iloc[0:500]
@@ -194,20 +194,20 @@ with tf.Session() as sess:
 
 # Using apply wasn't working correctly so I decided to use a list comprehension
 
-# In[21]:
+# In[ ]:
 
 
 # subset_reviews_ids = [convert_sentence(row[3]) for row in subset_reviews.itertuples()]
 
 
-# In[22]:
+# In[ ]:
 
 
 # subset_reviews_ids = pd.DataFrame(subset_reviews_ids)
 # subset_reviews_ids.shape
 
 
-# In[23]:
+# In[ ]:
 
 
 # subset_reviews_ids.head(2)
@@ -219,7 +219,7 @@ with tf.Session() as sess:
 
 # #### Converting training data
 
-# In[24]:
+# In[ ]:
 
 
 # train_reviews_ids = [convert_sentence(row[3]) for row in train_reviews.itertuples()]
@@ -229,7 +229,7 @@ with tf.Session() as sess:
 
 # #### Converting testing data
 
-# In[25]:
+# In[ ]:
 
 
 # test_reviews_ids = [convert_sentence(row[3]) for row in test_reviews.itertuples()]
@@ -237,25 +237,25 @@ with tf.Session() as sess:
 # test_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv", index=False)
 
 
-# In[26]:
+# In[ ]:
 
 
 # train_reviews_ids_df.shape
 
 
-# In[27]:
+# In[ ]:
 
 
 # train_reviews_ids_df.head()
 
 
-# In[28]:
+# In[ ]:
 
 
 # test_reviews_ids_df.shape
 
 
-# In[29]:
+# In[ ]:
 
 
 # test_reviews_ids_df.head()
@@ -263,13 +263,13 @@ with tf.Session() as sess:
 
 # #### TODO: remove drop once new version of csv is created
 
-# In[30]:
+# In[18]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
 
 
-# In[31]:
+# In[19]:
 
 
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
@@ -279,7 +279,7 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # Setting hyper parameters
 
-# In[32]:
+# In[20]:
 
 
 batch_size = 24
@@ -288,7 +288,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[33]:
+# In[21]:
 
 
 import tensorflow as tf
@@ -298,14 +298,14 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[34]:
+# In[22]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[35]:
+# In[23]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -313,7 +313,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[36]:
+# In[24]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -323,21 +323,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[37]:
+# In[25]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[38]:
+# In[26]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[39]:
+# In[27]:
 
 
 import datetime
@@ -462,25 +462,25 @@ pos.head()
 
 
 
-# In[41]:
+# In[ ]:
 
 
 nextBatch, nextBatchLabels = getTrainBatch()
 
 
-# In[43]:
+# In[ ]:
 
 
 nextBatch.shape
 
 
-# In[48]:
+# In[ ]:
 
 
 nextBatchLabels
 
 
-# In[47]:
+# In[ ]:
 
 
 nextBatch[0]
@@ -494,7 +494,7 @@ nextBatch[0]
 
 # #### Testing for functions  -  Delete later ABOVE
 
-# In[40]:
+# In[28]:
 
 
 from random import randint
@@ -511,11 +511,11 @@ def getTrainBatch():
     for i in range(batch_size):
         if (i % 2 == 0):
             num = randint(1, positive_review_ids.shape[0]-1)
-            arr[i] = train_reviews_ids_df[num-1:num].as_matrix()
+            arr[i] = positive_review_ids[num-1:num].as_matrix() 
             labels.append([1, 0])
         else:
             num = randint(1, negative_review_ids.shape[0]-1)
-            arr[i] = train_reviews_ids_df[num-1:num].as_matrix()
+            arr[i] = negative_review_ids[num-1:num].as_matrix()
             labels.append([0, 1])
     
     return arr, labels
@@ -554,4 +554,10 @@ for i in range(itterations):
         print("saved to %s" % save_path)
 
 writer.close()
+
+
+# In[ ]:
+
+
+
 
