@@ -51,35 +51,35 @@ from sklearn.model_selection import train_test_split
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
-# In[6]:
+# In[ ]:
 
 
-train_reviews.head()
+# train_reviews.head()
 
 
-# In[7]:
+# In[ ]:
 
 
-train_reviews.shape
+# train_reviews.shape
 
 
-# In[8]:
+# In[ ]:
 
 
-test_reviews.head()
+# test_reviews.head()
 
 
-# In[9]:
+# In[ ]:
 
 
-test_reviews.shape
+# test_reviews.shape
 
 
 # ## Exploratory analysis
 # 
 # Exploring the number of words in each review 
 
-# In[10]:
+# In[6]:
 
 
 def review_len(review):
@@ -88,19 +88,19 @@ def review_len(review):
     return len(review)
 
 
-# In[11]:
+# In[7]:
 
 
 num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
 
 
-# In[12]:
+# In[8]:
 
 
 num_words.describe()
 
 
-# In[13]:
+# In[9]:
 
 
 import matplotlib.pyplot as plt
@@ -113,7 +113,7 @@ plt.axis([0, 1200, 0, 8000])
 plt.show()
 
 
-# In[14]:
+# In[10]:
 
 
 maxSeqLength = 250
@@ -124,7 +124,7 @@ numDimensions = 300
 # 
 #  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[15]:
+# In[11]:
 
 
 def convert_sentence(sentence):
@@ -154,7 +154,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[16]:
+# In[12]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -164,7 +164,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[17]:
+# In[13]:
 
 
 with tf.Session() as sess:
@@ -261,15 +261,13 @@ with tf.Session() as sess:
 # test_reviews_ids_df.head()
 
 
-# #### TODO: remove drop once new version of csv is created
-
-# In[18]:
+# In[14]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
 
 
-# In[19]:
+# In[15]:
 
 
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
@@ -279,7 +277,7 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # Setting hyper parameters
 
-# In[20]:
+# In[16]:
 
 
 batch_size = 24
@@ -288,7 +286,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[21]:
+# In[17]:
 
 
 import tensorflow as tf
@@ -298,14 +296,14 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[22]:
+# In[18]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[23]:
+# In[19]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -313,7 +311,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[24]:
+# In[20]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -323,21 +321,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[25]:
+# In[21]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[26]:
+# In[22]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[27]:
+# In[23]:
 
 
 import datetime
@@ -345,156 +343,17 @@ import datetime
 tf.summary.scalar('Loss', loss)
 tf.summary.scalar('Accuracy', accuracy)
 merged = tf.summary.merge_all()
-logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
-writer = tf.summary.FileWriter(logdir, sess.graph)
+train_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_train") + "/"
+test_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_test") + "/"
+train_writer = tf.summary.FileWriter(train_logdir, sess.graph)
+test_writer = tf.summary.FileWriter(test_logdir, sess.graph)
 
 
 # ## Train Network
 # 
 # 
 
-# #### Testing for functions  -  Delete later
-
-# In[ ]:
-
-
-# train_reviews.head()
-train_reviews.iloc[1, 1]
-
-
-# In[ ]:
-
-
-train_reviews_ids_df.head()
-
-
-# In[ ]:
-
-
-(train_reviews_ids_df.shape[0]-1)
-
-
-# In[ ]:
-
-
-from random import randint
-
-test = randint(1, train_reviews_ids_df.shape[0]-1)
-ans = train_reviews_ids_df[test-1:test].as_matrix()
-
-print(ans)
-print(type(ans))
-
-
-# In[ ]:
-
-
-a, b = getTrainBatch()
-
-print(a[0])
-print(b[0])
-
-
-# In[ ]:
-
-
-train_reviews.head(2)
-
-
-# In[ ]:
-
-
-pos = train_reviews['sentiment'] == 0
-
-
-# In[ ]:
-
-
-len(pos)
-
-
-# In[ ]:
-
-
-train_reviews_ids_df.index.get_values()
-
-
-# In[ ]:
-
-
-train_reviews.index = train_reviews_ids_df.index
-
-
-# In[ ]:
-
-
-positive_reviews = train_reviews_ids_df.loc[train_reviews['sentiment'] == 1]
-negative_reviews = train_reviews_ids_df.loc[train_reviews['sentiment'] == 0]
-
-
-# In[ ]:
-
-
-positive_reviews.shape
-
-
-# In[ ]:
-
-
-negative_reviews.shape
-
-
-# In[ ]:
-
-
-# train_reviews['sentiment'] == 1
-
-
-# In[ ]:
-
-
-pos.head()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-nextBatch, nextBatchLabels = getTrainBatch()
-
-
-# In[ ]:
-
-
-nextBatch.shape
-
-
-# In[ ]:
-
-
-nextBatchLabels
-
-
-# In[ ]:
-
-
-nextBatch[0]
-
-
-# In[ ]:
-
-
-
-
-
-# #### Testing for functions  -  Delete later ABOVE
-
-# In[28]:
+# In[24]:
 
 
 from random import randint
@@ -521,13 +380,15 @@ def getTrainBatch():
     return arr, labels
 
 def getTestBatch():
+    test_reviews.index = test_reviews_ids_df.index
+    
     labels = []
     arr = np.zeros([batch_size, maxSeqLength])
     
     for i in range(batch_size):
         num = randint(1, test_reviews_ids_df.shape[0]-1)
         arr[i] = test_reviews_ids_df[num-1:num].as_matrix()
-        labels.append([1, 0]) if train_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
+        labels.append([1, 0]) if test_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
     return arr, labels
 
 
@@ -546,7 +407,12 @@ for i in range(itterations):
     #Write summary to Tensorboard
     if (i % 50 == 0):
         summary = sess.run(merged, {input_data: nextBatch, labels: nextBatchLabels})
-        writer.add_summary(summary, i)
+        train_writer.add_summary(summary, i)
+    
+    if (i % 500 == 0):
+        testBatch, testBatchLabels = getTestBatch()
+        summary_test = sess.run(merged, {input_data: testBatch, labels: testBatchLabels})
+        test_writer.add_summary(summary_test, i)
         
     #Save the network every 10,000 training iterations
     if(i % 10000 == 0 and i != 0):
