@@ -51,25 +51,25 @@ from sklearn.model_selection import train_test_split
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
-# In[ ]:
+# In[6]:
 
 
 # train_reviews.head()
 
 
-# In[ ]:
+# In[7]:
 
 
 # train_reviews.shape
 
 
-# In[ ]:
+# In[8]:
 
 
 # test_reviews.head()
 
 
-# In[ ]:
+# In[9]:
 
 
 # test_reviews.shape
@@ -79,7 +79,7 @@ train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0
 # 
 # Exploring the number of words in each review 
 
-# In[6]:
+# In[10]:
 
 
 def review_len(review):
@@ -88,19 +88,19 @@ def review_len(review):
     return len(review)
 
 
-# In[7]:
+# In[11]:
 
 
 num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
 
 
-# In[8]:
+# In[12]:
 
 
 num_words.describe()
 
 
-# In[9]:
+# In[13]:
 
 
 import matplotlib.pyplot as plt
@@ -113,7 +113,7 @@ plt.axis([0, 1200, 0, 8000])
 plt.show()
 
 
-# In[10]:
+# In[14]:
 
 
 maxSeqLength = 250
@@ -124,7 +124,7 @@ numDimensions = 300
 # 
 #  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[11]:
+# In[15]:
 
 
 def convert_sentence(sentence):
@@ -154,7 +154,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[12]:
+# In[16]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -164,7 +164,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[13]:
+# In[17]:
 
 
 with tf.Session() as sess:
@@ -261,13 +261,13 @@ with tf.Session() as sess:
 # test_reviews_ids_df.head()
 
 
-# In[14]:
+# In[18]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
 
 
-# In[15]:
+# In[19]:
 
 
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
@@ -277,7 +277,7 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # Setting hyper parameters
 
-# In[16]:
+# In[20]:
 
 
 batch_size = 24
@@ -286,7 +286,7 @@ num_classes = 2
 itterations = 100000
 
 
-# In[17]:
+# In[21]:
 
 
 import tensorflow as tf
@@ -296,14 +296,14 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[18]:
+# In[22]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[19]:
+# In[23]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -311,7 +311,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[20]:
+# In[24]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
@@ -321,21 +321,21 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[21]:
+# In[25]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[22]:
+# In[26]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[23]:
+# In[27]:
 
 
 import datetime
@@ -353,7 +353,7 @@ test_writer = tf.summary.FileWriter(test_logdir, sess.graph)
 # 
 # 
 
-# In[24]:
+# In[31]:
 
 
 from random import randint
@@ -369,30 +369,33 @@ def getTrainBatch():
     
     for i in range(batch_size):
         if (i % 2 == 0):
-            num = randint(1, positive_review_ids.shape[0]-1)
-            arr[i] = positive_review_ids[num-1:num].as_matrix() 
+            num = randint(0, positive_review_ids.shape[0]-1)
+            arr[i] = positive_review_ids[num:num+1].as_matrix() 
             labels.append([1, 0])
         else:
             num = randint(1, negative_review_ids.shape[0]-1)
-            arr[i] = negative_review_ids[num-1:num].as_matrix()
+            arr[i] = negative_review_ids[num:num+1].as_matrix()
             labels.append([0, 1])
     
     return arr, labels
 
 def getTestBatch():
-    test_reviews.index = test_reviews_ids_df.index
-    
     labels = []
     arr = np.zeros([batch_size, maxSeqLength])
     
     for i in range(batch_size):
-        num = randint(1, test_reviews_ids_df.shape[0]-1)
-        arr[i] = test_reviews_ids_df[num-1:num].as_matrix()
-        labels.append([1, 0]) if test_reviews.iloc[i, 1] == 1 else labels.append([0, 1])
+        num = randint(0, test_reviews_ids_df.shape[0]-1)
+        arr[i] = test_reviews_ids_df[num:num+1].as_matrix()
+        # OMFG WE SHOULD BE INDEXING WITH num not i, here is why this thing wasn't working properlly.
+        # TDO change this back to 1 liner
+        if test_reviews.iloc[num, 1] == 1:
+            labels.append([1, 0])
+        else:
+            labels.append([0, 1])
     return arr, labels
 
 
-# In[ ]:
+# In[32]:
 
 
 sess = tf.InteractiveSession()
@@ -419,11 +422,6 @@ for i in range(itterations):
         save_path = saver.save(sess, "models/pretrained_lstm.ckpt", global_step = 1)
         print("saved to %s" % save_path)
 
-writer.close()
-
-
-# In[ ]:
-
-
-
+train_writer.close()
+test_writer.close()
 
