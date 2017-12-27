@@ -51,25 +51,25 @@ from sklearn.model_selection import train_test_split
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
 
 
-# In[6]:
+# In[ ]:
 
 
 # train_reviews.head()
 
 
-# In[7]:
+# In[ ]:
 
 
 # train_reviews.shape
 
 
-# In[8]:
+# In[ ]:
 
 
 # test_reviews.head()
 
 
-# In[9]:
+# In[ ]:
 
 
 # test_reviews.shape
@@ -79,7 +79,7 @@ train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0
 # 
 # Exploring the number of words in each review 
 
-# In[10]:
+# In[6]:
 
 
 def review_len(review):
@@ -88,19 +88,19 @@ def review_len(review):
     return len(review)
 
 
-# In[11]:
+# In[7]:
 
 
 num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
 
 
-# In[12]:
+# In[8]:
 
 
 num_words.describe()
 
 
-# In[13]:
+# In[9]:
 
 
 import matplotlib.pyplot as plt
@@ -113,7 +113,7 @@ plt.axis([0, 1200, 0, 8000])
 plt.show()
 
 
-# In[14]:
+# In[10]:
 
 
 maxSeqLength = 250
@@ -124,7 +124,7 @@ numDimensions = 300
 # 
 #  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[15]:
+# In[11]:
 
 
 def convert_sentence(sentence):
@@ -154,7 +154,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[16]:
+# In[12]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -164,7 +164,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[17]:
+# In[13]:
 
 
 with tf.Session() as sess:
@@ -261,13 +261,13 @@ with tf.Session() as sess:
 # test_reviews_ids_df.head()
 
 
-# In[18]:
+# In[14]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
 
 
-# In[19]:
+# In[15]:
 
 
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
@@ -275,18 +275,38 @@ test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_id
 
 # ## RNN Model
 
+# In[16]:
+
+
+def get_trainable_param(text):
+    for tf_var in  tf.trainable_variables():
+        if text in tf_var.name:
+            return tf_var
+
+
+def get_l2_regularizer():
+    return sum(tf.nn.l2_loss(tf_var) for tf_var in tf.trainable_variables() if "kernel" in tf_var.name)
+            
+
+
 # Setting hyper parameters
 
-# In[20]:
+# In[27]:
 
 
 batch_size = 24
 lstm_units = 64
 num_classes = 2
-itterations = 100000
+itterations = 50000
+
+# Dropout params
+do_in = 0.7
+do_out = 0.6
+do_state = 1
+lambda_l2 = 0.00015
 
 
-# In[21]:
+# In[28]:
 
 
 import tensorflow as tf
@@ -296,46 +316,49 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[22]:
+# In[29]:
 
 
-data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32)
+data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32, name="data", trainable=False)
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[23]:
+# In[30]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
-lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=0.75)
+lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=do_out, input_keep_prob=do_in, state_keep_prob=do_state)
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[24]:
+# In[31]:
 
 
-weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]))
-bias = tf.Variable(tf.constant(0.1, shape=[num_classes]))
+weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]), name="kernel")
+bias = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="bias")
 value = tf.transpose(value, [1, 0, 2])
 last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[25]:
+# In[32]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[26]:
+# In[33]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
+#l2 = tf.nn.l2_loss(tf.trainable_variables()[0])
+l2 = get_l2_regularizer()
+loss = loss + (lambda_l2 * l2)
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 
-# In[27]:
+# In[34]:
 
 
 import datetime
@@ -343,8 +366,8 @@ import datetime
 tf.summary.scalar('Loss', loss)
 tf.summary.scalar('Accuracy', accuracy)
 merged = tf.summary.merge_all()
-train_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_train") + "/"
-test_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_test") + "/"
+train_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_train_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2)) + "/"
+test_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_test_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2)) + "/"
 train_writer = tf.summary.FileWriter(train_logdir, sess.graph)
 test_writer = tf.summary.FileWriter(test_logdir, sess.graph)
 
@@ -353,7 +376,7 @@ test_writer = tf.summary.FileWriter(test_logdir, sess.graph)
 # 
 # 
 
-# In[31]:
+# In[35]:
 
 
 from random import randint
@@ -395,7 +418,7 @@ def getTestBatch():
     return arr, labels
 
 
-# In[32]:
+# In[ ]:
 
 
 sess = tf.InteractiveSession()
@@ -424,4 +447,10 @@ for i in range(itterations):
 
 train_writer.close()
 test_writer.close()
+
+
+# In[ ]:
+
+
+
 
