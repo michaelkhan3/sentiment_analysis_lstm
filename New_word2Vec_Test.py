@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import pandas as pd
@@ -12,7 +12,7 @@ import re
 import tensorflow as tf
 
 
-# In[2]:
+# In[ ]:
 
 
 wordsVector = np.load('glove_word2Vec/wordVectors.npy')
@@ -20,7 +20,7 @@ wordsList = np.load('glove_word2Vec/wordsList.npy').tolist()
 wordsList = [word.decode('UTF-8') for word in wordsList]
 
 
-# In[3]:
+# In[ ]:
 
 
 print(wordsVector.shape)
@@ -32,23 +32,33 @@ print(len(wordsList))
 # Now we will load the movie review data. 
 # The data comes from https://www.kaggle.com/c/word2vec-nlp-tutorial/data
 
-# In[4]:
+# In[ ]:
 
 
 data = pd.read_table("movie_review_dataset/labeledTrainData/labeledTrainData.tsv", sep='\t')
 
 
-# Split training and testing datasets
+# Split dataset into training, development and testing
 # 
 # 
-# Set seed to make sure the split is always the same
+# Set seed to make sure the split is always the same.
 
-# In[5]:
+# In[ ]:
 
 
 from sklearn.model_selection import train_test_split
 
 train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0.6, random_state=3957)
+
+# split test set into dev and test
+dev_reviews = test_reviews.iloc[(int(len(test_reviews)/2)):, :]
+test_reviews = test_reviews.iloc[:(int(len(test_reviews)/2)), :]
+
+
+# In[ ]:
+
+
+# test_reviews.to_csv("movie_review_dataset/labeledTrainData/test_data.csv", index=False)
 
 
 # In[ ]:
@@ -75,11 +85,17 @@ train_reviews, test_reviews = train_test_split(data, test_size=0.4, train_size=0
 # test_reviews.shape
 
 
+# In[ ]:
+
+
+# dev_reviews.shape
+
+
 # ## Exploratory analysis
 # 
 # Exploring the number of words in each review 
 
-# In[6]:
+# In[ ]:
 
 
 def review_len(review):
@@ -88,47 +104,48 @@ def review_len(review):
     return len(review)
 
 
-# In[7]:
+# In[ ]:
 
 
 num_words = train_reviews.apply(lambda row: review_len(row['review']), axis=1)
 
 
-# In[8]:
+# In[ ]:
 
 
 num_words.describe()
 
 
-# In[9]:
+# In[ ]:
 
 
 import matplotlib.pyplot as plt
 get_ipython().magic('matplotlib inline')
 
 plt.hist(num_words, 50)
-plt.xlabel("Sentence Length")
+plt.xlabel("Review Length")
 plt.ylabel("Frequency")
-plt.axis([0, 1200, 0, 8000])
+plt.axis([0, 1200, 0, 5000])
 plt.show()
 
 
-# In[10]:
+# In[ ]:
 
 
 maxSeqLength = 250
-numDimensions = 300
+###### Try to change this to 50 and see what happens
+numDimensions = 50
 
 
 # ### Converting sentences
 # 
 #  Creating a utility function to convert reviews into a numpy array of words.
 
-# In[11]:
+# In[ ]:
 
 
 def convert_sentence(sentence):
-    # Got from analysis below.
+    # Got from analysis above.
     maxSeqLength = 250
     index_count = 0
     
@@ -154,7 +171,7 @@ def convert_sentence(sentence):
     return np.array(sentenceList)
 
 
-# In[12]:
+# In[ ]:
 
 
 testSent = "Hello, how are you doing today?"
@@ -164,7 +181,7 @@ testSentVec = convert_sentence(testSent)
 print(testSentVec)
 
 
-# In[13]:
+# In[ ]:
 
 
 with tf.Session() as sess:
@@ -237,6 +254,16 @@ with tf.Session() as sess:
 # test_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv", index=False)
 
 
+# #### Converting development data
+
+# In[ ]:
+
+
+# dev_reviews_ids = [convert_sentence(row[3]) for row in dev_reviews.itertuples()]
+# dev_reviews_ids_df = pd.DataFrame(dev_reviews_ids)
+# dev_reviews_ids_df.to_csv("movie_review_dataset/labeledTrainData/dev_ids_matrix.csv", index=False)
+
+
 # In[ ]:
 
 
@@ -261,21 +288,23 @@ with tf.Session() as sess:
 # test_reviews_ids_df.head()
 
 
-# In[14]:
+# In[ ]:
 
 
 train_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/train_ids_matrix.csv")
-
-
-# In[15]:
-
-
 test_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/test_ids_matrix.csv")
+dev_reviews_ids_df = pd.read_csv("movie_review_dataset/labeledTrainData/dev_ids_matrix.csv")
+
+
+# In[ ]:
+
+
+
 
 
 # ## RNN Model
 
-# In[16]:
+# In[ ]:
 
 
 def get_trainable_param(text):
@@ -291,13 +320,15 @@ def get_l2_regularizer():
 
 # Setting hyper parameters
 
-# In[27]:
+# In[ ]:
 
 
 batch_size = 24
 lstm_units = 64
 num_classes = 2
-itterations = 50000
+# 58K epochs looks to be optimal for this network
+iterations = 58000
+learning_rate = 0.001
 
 # Dropout params
 do_in = 0.7
@@ -306,7 +337,7 @@ do_state = 1
 lambda_l2 = 0.00015
 
 
-# In[28]:
+# In[ ]:
 
 
 import tensorflow as tf
@@ -316,14 +347,14 @@ labels = tf.placeholder(tf.float32, [batch_size, num_classes])
 input_data = tf.placeholder(tf.int32, [batch_size, maxSeqLength])
 
 
-# In[29]:
+# In[ ]:
 
 
 data = tf.Variable(tf.zeros([batch_size, maxSeqLength, numDimensions]), dtype=tf.float32, name="data", trainable=False)
 data = tf.nn.embedding_lookup(wordsVector, input_data)
 
 
-# In[30]:
+# In[ ]:
 
 
 lstm_cell = tf.contrib.rnn.BasicLSTMCell(lstm_units)
@@ -331,7 +362,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(cell=lstm_cell, output_keep_prob=do_ou
 value, _ = tf.nn.dynamic_rnn(lstm_cell, data, dtype=tf.float32)
 
 
-# In[31]:
+# In[ ]:
 
 
 weight = tf.Variable(tf.truncated_normal([lstm_units, num_classes]), name="kernel")
@@ -341,48 +372,50 @@ last = tf.gather(value, int(value.get_shape()[0]) - 1)
 prediction = (tf.matmul(last, weight) + bias)
 
 
-# In[32]:
+# In[ ]:
 
 
 correctPred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels,1))
 accuracy = tf.reduce_mean(tf.cast(correctPred, tf.float32))
 
 
-# In[33]:
+# In[ ]:
 
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=labels))
 #l2 = tf.nn.l2_loss(tf.trainable_variables()[0])
 l2 = get_l2_regularizer()
 loss = loss + (lambda_l2 * l2)
-optimizer = tf.train.AdamOptimizer().minimize(loss)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
 
 
-# In[34]:
+# In[ ]:
 
 
 import datetime
 
+sess = tf.InteractiveSession()
+
 tf.summary.scalar('Loss', loss)
 tf.summary.scalar('Accuracy', accuracy)
 merged = tf.summary.merge_all()
-train_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_train_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2)) + "/"
-test_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_test_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2)) + "/"
+train_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_train_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}_learnrate{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2, learning_rate)) + "/"
+dev_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S_dev_batchsize{}_lstmunits{}_doin{}_dostate{}_doout{}_regul{}_learnrate{}".format(batch_size, lstm_units, do_in, do_state, do_out, lambda_l2, learning_rate)) + "/"
 train_writer = tf.summary.FileWriter(train_logdir, sess.graph)
-test_writer = tf.summary.FileWriter(test_logdir, sess.graph)
+dev_writer = tf.summary.FileWriter(dev_logdir, sess.graph)
 
 
 # ## Train Network
 # 
 # 
 
-# In[35]:
+# In[ ]:
 
 
 from random import randint
 
 # Helper functions to provide data for batch
-def getTrainBatch():
+def get_train_batch():
     train_reviews.index = train_reviews_ids_df.index
     positive_review_ids = train_reviews_ids_df[train_reviews['sentiment'] == 1]
     negative_review_ids = train_reviews_ids_df[train_reviews['sentiment'] == 0]
@@ -402,32 +435,34 @@ def getTrainBatch():
     
     return arr, labels
 
-def getTestBatch():
+def get_dev_batch():
     labels = []
     arr = np.zeros([batch_size, maxSeqLength])
     
     for i in range(batch_size):
-        num = randint(0, test_reviews_ids_df.shape[0]-1)
-        arr[i] = test_reviews_ids_df[num:num+1].as_matrix()
-        # OMFG WE SHOULD BE INDEXING WITH num not i, here is why this thing wasn't working properlly.
-        # TDO change this back to 1 liner
-        if test_reviews.iloc[num, 1] == 1:
+        num = randint(0, dev_reviews_ids_df.shape[0]-1)
+        arr[i] = dev_reviews_ids_df[num:num+1].as_matrix()
+        if dev_reviews.iloc[num, 1] == 1:
             labels.append([1, 0])
         else:
             labels.append([0, 1])
     return arr, labels
 
+def get_test_data():
+    labels = [[1, 0] if i == 1 else [0, 1] for i in dev_reviews.iloc[:, 1]]
+    return test_reviews_ids_df, labels
+
 
 # In[ ]:
 
 
-sess = tf.InteractiveSession()
+
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
 
-for i in range(itterations):
+for i in range(iterations):
     # Get next batch of reviews
-    nextBatch, nextBatchLabels = getTrainBatch()
+    nextBatch, nextBatchLabels = get_train_batch()
     sess.run(optimizer, {input_data: nextBatch, labels: nextBatchLabels})
     
     #Write summary to Tensorboard
@@ -436,9 +471,9 @@ for i in range(itterations):
         train_writer.add_summary(summary, i)
     
     if (i % 500 == 0):
-        testBatch, testBatchLabels = getTestBatch()
-        summary_test = sess.run(merged, {input_data: testBatch, labels: testBatchLabels})
-        test_writer.add_summary(summary_test, i)
+        devBatch, devBatchLabels = get_dev_batch()
+        summary_dev = sess.run(merged, {input_data: devBatch, labels: devBatchLabels})
+        dev_writer.add_summary(summary_dev, i)
         
     #Save the network every 10,000 training iterations
     if(i % 10000 == 0 and i != 0):
@@ -446,7 +481,7 @@ for i in range(itterations):
         print("saved to %s" % save_path)
 
 train_writer.close()
-test_writer.close()
+dev_writer.close()
 
 
 # In[ ]:
