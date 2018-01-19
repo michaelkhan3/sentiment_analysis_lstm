@@ -1,7 +1,8 @@
 
 # coding: utf-8
 
-# In[19]:
+# In[1]:
+
 
 import pandas as pd
 import csv
@@ -10,36 +11,43 @@ import numpy as np
 
 # In[2]:
 
+
 words = pd.read_table("glove_word2Vec/glove.6B/glove.6B.50d.txt", sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE)
 
 
-# In[20]:
+# In[3]:
+
 
 words.shape
 
 
-# In[22]:
+# In[4]:
+
 
 len(words.index)
 
 
-# In[4]:
+# In[5]:
+
 
 def vec(w):
   return words.loc[w].as_matrix()
 
 
-# In[5]:
+# In[6]:
+
 
 vec("shark")
 
 
-# In[6]:
+# In[7]:
+
 
 vec("fish")
 
 
-# In[7]:
+# In[8]:
+
 
 words_matrix = words.as_matrix()
 
@@ -58,57 +66,32 @@ def find_five_closest(v):
         print(words.iloc[i].name)
 
 
-# In[8]:
+# In[10]:
 
-find_closest_word(vec("fish"))
-
-
-# In[9]:
 
 find_five_closest(vec("fish"))
 
 
-# In[10]:
+# In[11]:
+
 
 find_five_closest(vec("obama") - vec("usa") + vec("france"))
 
 
-# In[11]:
-
-find_five_closest(vec("fish") - vec("water"))
-
-
 # In[12]:
+
 
 find_five_closest(vec("king") - vec("man") + vec("woman"))
 
 
-# In[14]:
+# In[13]:
 
-find_five_closest(vec("sealion") - vec("water"))
-
-
-# In[15]:
-
-find_five_closest(vec("michael") - vec("man") + vec("woman"))
-
-
-# In[16]:
 
 find_five_closest(vec("car") + vec("wings") + vec("fly"))
 
 
-# In[17]:
-
-find_five_closest(vec("dehydration") + vec("water"))
+# In[15]:
 
 
-# In[18]:
-
-find_five_closest(vec("duck") - vec("quack") + vec("meow"))
-
-
-# In[ ]:
-
-
+find_five_closest(vec("best") - vec("good") + vec("bad"))
 
